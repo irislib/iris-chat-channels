@@ -4,7 +4,7 @@
 
 ## Install
 
-**Hermes**
+### Hermes
 
 ```sh
 hermes plugins install irislib/iris-chat-channels/hermes --ref 202a422c81eec3246bf19cb45657fc3513c2ac9a --enable
@@ -13,7 +13,7 @@ hermes gateway setup
 
 Choose Iris Chat, then run `hermes gateway run` or restart your gateway.
 
-**OpenClaw**
+### OpenClaw
 
 ```sh
 openclaw plugins install git:github.com/irislib/iris-chat-channels@v0.1.1
