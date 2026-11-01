@@ -1,0 +1,19 @@
+name: iris-chat-channel
+label: Iris Chat
+kind: platform
+version: 0.1.0
+description: Private Iris Chat messages as a native Hermes gateway channel.
+author: Iris
+license: MIT
+homepage: https://github.com/irislib/iris-chat-channels
+tags: [gateway, messaging, iris]
+optional_env:
+  - name: IRIS_CHANNEL_STATE_DIR
+    description: Dedicated persistent Iris channel directory, created by gateway setup.
+    password: false
+  - name: IRIS_CHANNEL_BRIDGE_URL
+    description: Optional isolated loopback transport for managed containers.
+    password: false
+  - name: IRIS_CHANNEL_OWNER
+    description: Approved contact selected during setup; used for scheduled delivery.
+    password: false
