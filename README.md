@@ -24,7 +24,7 @@ shows typing while processing and clears it on completion, failure, and stop.
 ## Hermes
 
 ```sh
-hermes plugins install irislib/iris-chat-channels/hermes --enable
+hermes plugins install irislib/iris-chat-channels/hermes --ref e52a5a95c770472d45e8ff3a9b706faab28ecf7e --enable
 hermes gateway setup
 ```
 
