@@ -3,13 +3,12 @@
 Use [Iris Chat](https://irischat.org) as a private interface to Pi: Signal-like messaging over Nostr Double Ratchet, without phone numbers or signup.
 
 ```sh
-npm install --prefix "$HOME/.local/share/iris-channels/packages" https://github.com/irislib/iris-chat-channels/releases/download/v0.2.0/iris-pi-0.2.0.tgz
-"$HOME/.local/share/iris-channels/packages/node_modules/.bin/iris-pi-setup"
-pi install "$HOME/.local/share/iris-channels/packages/node_modules/@irislib/pi-iris-chat"
+pi install npm:@irislib/pi-iris-chat@0.2.0
+npx --package @irislib/pi-iris-chat@0.2.0 iris-pi-setup
 IRIS_PI_STATE_DIR="$HOME/.local/share/iris-channels/pi" pi
 ```
 
-Review the [release checksums](https://github.com/irislib/iris-chat-channels/releases/tag/v0.2.0) before installation. The package is also prepared for npm publication as `@irislib/pi-iris-chat`.
+Review the [release checksums](https://github.com/irislib/iris-chat-channels/releases/tag/v0.2.0) before installation. The package is published as [@irislib/pi-iris-chat](https://www.npmjs.com/package/@irislib/pi-iris-chat), with the `pi-package` discovery keyword. Release archives are also available.
 
 Requires Pi 1.4.0, Node 22+, Python 3.9+, macOS/Linux (or WSL), and the [Iris CLI](https://irischat.org/#command-line-interface). Setup asks for your public Iris ID and an invite from your app. Keep Iris online for first contact; never enter your personal secret key.
 
