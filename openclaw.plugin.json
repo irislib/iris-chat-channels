@@ -1,7 +1,7 @@
 {
   "id": "iris-chat-channel",
   "name": "Iris Chat",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Chat with your agent through Iris: Signal-like messaging with Nostr Double Ratchet encryption, without phone numbers or signup.",
   "channels": [
     "iris"

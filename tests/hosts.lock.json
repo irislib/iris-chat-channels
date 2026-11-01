@@ -1,0 +1,58 @@
+{
+  "opencode": {
+    "repository": "anomalyco/opencode",
+    "version": "v1.19.5",
+    "commit": "810c0eba1a7348036f8bdf61e6632d0c36c6876c",
+    "main": "8c750e3750f84ffae3ff36910ab4c5dbeea132a9",
+    "assets": [
+      {
+        "name": "opencode-linux-x64.tar.gz",
+        "size": 79651896,
+        "browser_download_url": "https://github.com/anomalyco/opencode/releases/download/v1.19.5/opencode-linux-x64.tar.gz",
+        "digest": "sha256:588310a336fa3b9df36b3f0225b26f679d453efaad0cf3d66c3651ef3ec1647a"
+      }
+    ]
+  },
+  "pi": {
+    "repository": "earendil-works/pi",
+    "version": "v1.4.0",
+    "commit": "4a080252f06caf63a525d7873c5d94d3c23887e0",
+    "main": "b556cfe5b0300a91f39c7bc5369a65a25fb7fcd5",
+    "assets": [
+      {
+        "name": "pi-linux-x64.tar.gz",
+        "size": 42645744,
+        "browser_download_url": "https://github.com/earendil-works/pi/releases/download/v1.4.0/pi-linux-x64.tar.gz",
+        "digest": "sha256:f2e4e4329603223d03260cdb8bd5033dbdc1f73ba58ab8939db2e56546e115d2"
+      }
+    ]
+  },
+  "nanobot": {
+    "repository": "HKUDS/nanobot",
+    "version": "v0.4.0",
+    "commit": "8f7a7d17590de7ab187650381894dba2b9e060ab",
+    "main": "8b37976d36c2812c62b464321e729a88872b60f9",
+    "assets": [
+      {
+        "name": "nanobot_ai-0.4.0-py3-none-manylinux_2_17_x86_64.whl",
+        "size": 55366264,
+        "browser_download_url": "https://github.com/HKUDS/nanobot/releases/download/v0.4.0/nanobot_ai-0.4.0-py3-none-manylinux_2_17_x86_64.whl",
+        "digest": "sha256:6cd6ad40b9aaf3087f91ef8a0b5484bade1100595493755bef98d23045182a47"
+      }
+    ]
+  },
+  "zeroclaw": {
+    "repository": "zeroclaw-labs/zeroclaw",
+    "version": "v0.8.7",
+    "commit": "99bd353c756f4e64f381cfe9c3002ebff32f3055",
+    "main": "b28d1c3de99099fd565cdedd4d80d8cff7f6a855",
+    "assets": [
+      {
+        "name": "zeroclaw-x86_64-unknown-linux-gnu.tar.gz",
+        "size": 38287574,
+        "browser_download_url": "https://github.com/zeroclaw-labs/zeroclaw/releases/download/v0.8.7/zeroclaw-x86_64-unknown-linux-gnu.tar.gz",
+        "digest": "sha256:e10e6e4ba7bf8a081af4a8769d8c16ca3eb48e8e897eac42b94ca4335b120a34"
+      }
+    ]
+  }
+}

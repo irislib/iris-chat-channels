@@ -1,0 +1,25 @@
+{
+  "name": "@irislib/opencode-iris-chat",
+  "version": "0.2.0",
+  "description": "Control OpenCode through Iris Chat: Signal-like Nostr Double Ratchet messaging, without phone numbers or signup.",
+  "homepage": "https://irischat.org",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/irislib/iris-chat-channels.git"
+  },
+  "license": "MIT",
+  "type": "module",
+  "main": "./index.mjs",
+  "bin": {
+    "iris-opencode-setup": "./setup.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "keywords": [
+    "opencode-plugin",
+    "iris",
+    "nostr",
+    "encrypted-chat"
+  ]
+}

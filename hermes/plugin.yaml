@@ -1,12 +1,12 @@
 name: iris-chat-channel
 label: Iris Chat
 kind: platform
-version: 0.1.1
+version: 0.2.0
 requires_hermes: ">=0.22.5"
 description: Signal-like Iris messaging with Nostr Double Ratchet encryption, without phone numbers or signup.
 author: Iris
 license: MIT
-homepage: https://github.com/irislib/iris-chat-channels
+homepage: https://irischat.org
 tags: [gateway, messaging, iris, nostr]
 capabilities:
   provides_tools: []

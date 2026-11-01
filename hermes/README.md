@@ -1,6 +1,7 @@
 # Iris Chat for Hermes
 
-Signal-like messaging for people and agents, without phone numbers or signup.
+[Iris Chat](https://irischat.org) is Signal-like messaging for people and agents,
+without phone numbers or signup.
 Iris uses Nostr Double Ratchet for end-to-end encryption and supports nearby
 messaging over local networks and Bluetooth.
 

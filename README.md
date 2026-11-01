@@ -1,74 +1,48 @@
-# Iris Chat channels for Hermes and OpenClaw
+# Iris Chat agent channels
 
-[Iris Chat](https://irischat.org) is Signal-like messaging for people and agents,
-without phone numbers or signup. It uses Nostr Double Ratchet for end-to-end
-encryption and supports nearby messaging over local networks and Bluetooth.
-These native plugins connect your existing agent, model, and tools.
+[Iris Chat](https://irischat.org) is Signal-like messaging without phone numbers or signup. It uses Nostr Double Ratchet for end-to-end encryption and supports nearby messaging over local networks and Bluetooth. These native plugins connect your existing agent, model, and tools.
 
-## Hermes
+## Install
+
+**Hermes**
 
 ```sh
 hermes plugins install irislib/iris-chat-channels/hermes --ref 202a422c81eec3246bf19cb45657fc3513c2ac9a --enable
 hermes gateway setup
 ```
 
-Choose **Iris Chat**, then run `hermes gateway run` or restart your gateway service.
+Choose Iris Chat, then run `hermes gateway run` or restart your gateway.
 
-## OpenClaw
+**OpenClaw**
 
 ```sh
 openclaw plugins install git:github.com/irislib/iris-chat-channels@v0.1.1
 openclaw iris setup
 ```
 
-Run `openclaw gateway run` or restart your gateway service. Review OpenClaw's
-plugin trust prompt; for a noninteractive install after review, append
-`--force --accept-capabilities` to the install command.
+Run `openclaw gateway run` or restart your gateway. Review the plugin trust prompt.
 
-## Setup
+| Platform | Install and setup | Tested host |
+| --- | --- | --- |
+| Hermes | [Channel guide](hermes/README.md) | 0.22.5 |
+| OpenClaw | Commands above | 2026.10.9 |
+| OpenCode | [Project channel](opencode/README.md) | 1.19.5 |
+| Pi | [Session extension](pi/README.md) | 1.4.0 |
+| nanobot | [Native channel package](nanobot/README.md) | 0.4.0 |
+| ZeroClaw | [WASM channel and bridge](zeroclaw/README.md) | 0.8.7 |
 
-Requires macOS/Linux (including WSL), Python 3.9+, and the
-[Iris CLI](https://github.com/irislib/iris-chat-rs/blob/main/docs/agents.md#install)
-on your gateway's PATH. Tested with **Hermes 0.22.5**, **OpenClaw 2026.10.9**, and
-**Iris CLI 2026.10.30**. Check compatibility before upgrading the hosts.
+Requires macOS/Linux (including WSL), Python, and the [Iris CLI](https://irischat.org/#command-line-interface) on the agent's PATH. Tested with Iris CLI 2026.10.30. Follow each guide for host-specific requirements.
 
-Setup asks for your Iris public user ID (`npub…`) and private invite link,
-creates a separate agent identity, and verifies the contact. Your secret key is
-never needed. Keep Iris online during first contact; the agent introduces itself
-when the gateway starts. Send it a task in that chat.
+Setup asks for your public Iris ID (`npub…`) and an invite link from your app. It creates a separate agent identity; never enter your personal secret key. Keep Iris online for first contact, then send tasks in the resulting chat.
 
 ## Behavior and privacy
 
-- One approved direct contact per profile. Text, seen receipts, and typing are
-  supported; groups and attachments are not. Typing stays on while processing
-  and clears afterward. `received` or `seen` confirms delivery; `sent` alone does not.
-- Rerunning setup preserves the identity and contact without another introduction.
-  Back up the private `iris-channel` directory inside your Hermes/OpenClaw profile
-  and retain it across plugin updates. Keep profiles, invites, and logs out of public issues.
-- Plugins use the agent's existing permissions. For filesystem/network isolation
-  and Iris keys kept outside the agent, use
-  [iris-agent-dockers](https://github.com/irislib/iris-agent-dockers).
+One approved direct contact per profile. Text, seen receipts, and typing are supported; groups and attachments are not. Typing stays on while working and clears afterward. Interrupted tasks are reported without automatically repeating their tools.
 
-## Troubleshooting
+Keep the private Iris state directory across updates, and let only one agent process use each profile. Keep profiles, invites, and logs out of public issues. Iris encrypts transport; the agent and its configured model provider receive plaintext prompts. Each host retains its normal tool permissions. For filesystem/network isolation, see [iris-agent-dockers](https://github.com/irislib/iris-agent-dockers).
 
-For Hermes, run `hermes plugins doctor iris-chat-channel` and `hermes gateway status`.
-For OpenClaw, run `openclaw channels status`. Check gateway logs, model availability,
-and that `iris` and `python3` are on the service's PATH. Only one gateway may use
-an Iris identity at a time.
-
-The plugin runs the installed Iris CLI and, when needed, its background service.
-Iris stores its own keys and history in the dedicated profile and connects to its
-configured message servers/transports. No telemetry or automatic software downloads.
-See [permissions and data](https://github.com/irislib/iris-chat-channels/blob/main/hermes/README.md#permissions-and-data) for details.
+The plugins run the installed Iris CLI and a Python transport, with no telemetry or self-updater. Iris connects to its configured message servers/transports and stores its own keys and history locally. See [permissions and data](hermes/README.md#permissions-and-data).
 
 ## Development
 
-```sh
-python3 -m unittest discover -s tests -p 'test_*.py' -v
-node --test tests/*.test.mjs
-```
-
-Hermes runtime tests require the real host. See [gateway_e2e.py](tests/gateway_e2e.py)
-for full gateway checks with an offline fixture. [package.py](scripts/package.py)
-builds deterministic archives from committed source; downloads and checksums are
-in [Releases](https://github.com/irislib/iris-chat-channels/releases).
+[Tests and pinned hosts](tests/README.md) · [Releases and checksums](https://github.com/irislib/iris-chat-channels/releases) · [Iris Chat](https://irischat.org)
