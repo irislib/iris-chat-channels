@@ -9,4 +9,5 @@ const existing = await readJson(`${state}/opencode.json`);
 if (existing && resolve(existing.directory) !== directory) throw new Error('This Iris profile belongs to another project. Select a new IRIS_OPENCODE_STATE_DIR.');
 await pair(state, 'OpenCode');
 await writeJson(`${state}/opencode.json`, { ...existing, enabled: true, directory });
-console.log('Iris is paired to this project. Add the Iris plugin to OpenCode, then start OpenCode in this directory.');
+console.log('Iris is paired to this project. Merge this into its opencode.json, then start OpenCode in that directory:');
+console.log(JSON.stringify({ plugin: [new URL('./index.mjs', import.meta.url).href] }, null, 2));

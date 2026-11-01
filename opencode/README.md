@@ -3,14 +3,11 @@
 Control a dedicated OpenCode session from [Iris Chat](https://irischat.org): Signal-like messaging over Nostr Double Ratchet, without phone numbers or signup.
 
 ```sh
-npx --package @irislib/opencode-iris-chat@0.2.0 iris-opencode-setup /path/to/project
+npm install --prefix "$HOME/.config/opencode" https://github.com/irislib/iris-chat-channels/releases/download/v0.2.0/iris-opencode-0.2.0.tgz
+"$HOME/.config/opencode/node_modules/.bin/iris-opencode-setup" /path/to/project
 ```
 
-Add to that project's `opencode.json`, then start OpenCode there:
-
-```json
-{"plugin": ["@irislib/opencode-iris-chat@0.2.0"]}
-```
+Copy the plugin JSON printed by setup into that project's `opencode.json`, then start OpenCode there. Review the [release checksums](https://github.com/irislib/iris-chat-channels/releases/tag/v0.2.0) before installation. The package is also prepared for npm publication as `@irislib/opencode-iris-chat`.
 
 Requires OpenCode 1.19.5, Node 22+, Python 3.9+, macOS/Linux (or WSL), and the [Iris CLI](https://irischat.org/#command-line-interface). Setup asks for your public Iris ID and an invite from your app. No personal secret key is needed. Keep Iris online for first contact.
 
