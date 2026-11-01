@@ -11,8 +11,10 @@ import subprocess
 import sys
 import threading
 import time
+import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+JOB_ID = 'fixture-'+str(uuid.uuid4())
 OWNER = 'a'*64
 events = []
 model_calls = []
@@ -43,7 +45,7 @@ class Handler(BaseHTTPRequestHandler):
                 result = None
                 if not claimed:
                     claimed = True
-                    result = {'id':'fixture-job','text':'Reply with NATIVE_IRIS_OK.','owner':OWNER,'created':time.time(),'interrupted':False}
+                    result = {'id':JOB_ID,'text':'Reply with NATIVE_IRIS_OK.','owner':OWNER,'created':time.time(),'interrupted':False}
             elif op == 'send': result = {'message_id':'fixture-response','delivery':'sent'}
             elif op == 'finish': finished = True
             self.reply({'ok':True,'result':result})
