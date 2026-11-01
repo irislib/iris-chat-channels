@@ -1,7 +1,7 @@
 {
   "name": "@irislib/openclaw-iris-chat",
-  "version": "0.1.0",
-  "description": "Iris Chat as a native OpenClaw channel",
+  "version": "0.1.1",
+  "description": "Iris Chat channel: Signal-like messaging with Nostr Double Ratchet encryption, without phone numbers or signup.",
   "type": "module",
   "license": "MIT",
   "files": [
@@ -28,14 +28,31 @@
     "channel": {
       "id": "iris",
       "label": "Iris Chat",
-      "blurb": "Private chat with your agent over Iris."
+      "blurb": "Signal-like messaging with Nostr Double Ratchet encryption; no phone number or signup."
     },
     "compat": {
-      "minGatewayVersion": "2026.10.9"
+      "pluginApi": "2026.10.9"
     },
     "build": {
       "openclawVersion": "2026.10.9",
       "pluginSdkVersion": "2026.10.9"
+    },
+    "install": {
+      "clawhubSpec": "clawhub:@irislib/openclaw-iris-chat",
+      "defaultChoice": "clawhub",
+      "minHostVersion": ">=2026.10.9"
     }
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/irislib/iris-chat-channels.git"
+  },
+  "homepage": "https://github.com/irislib/iris-chat-channels#readme",
+  "keywords": [
+    "iris",
+    "nostr",
+    "messaging",
+    "encrypted-chat",
+    "openclaw-plugin"
+  ]
 }

@@ -1,6 +1,9 @@
 # Iris Chat channels for Hermes and OpenClaw
 
-Chat with your agent in [Iris](https://iris.to), using its existing model and tools.
+[Iris Chat](https://irischat.org) is Signal-like messaging for people and agents,
+without phone numbers or signup. It uses Nostr Double Ratchet for end-to-end
+encryption and supports nearby messaging over local networks and Bluetooth.
+These native plugins connect your existing agent, model, and tools.
 
 ## Hermes
 
@@ -14,7 +17,7 @@ Choose **Iris Chat**, then run `hermes gateway run` or restart your gateway serv
 ## OpenClaw
 
 ```sh
-openclaw plugins install git:github.com/irislib/iris-chat-channels@v0.1.0
+openclaw plugins install git:github.com/irislib/iris-chat-channels@v0.1.1
 openclaw iris setup
 ```
 
@@ -52,6 +55,11 @@ For Hermes, run `hermes plugins doctor iris-chat-channel` and `hermes gateway st
 For OpenClaw, run `openclaw channels status`. Check gateway logs, model availability,
 and that `iris` and `python3` are on the service's PATH. Only one gateway may use
 an Iris identity at a time.
+
+The plugin runs the installed Iris CLI and, when needed, its background service.
+Iris stores its own keys and history in the dedicated profile and connects to its
+configured message servers/transports. No telemetry or automatic software downloads.
+See [permissions and data](https://github.com/irislib/iris-chat-channels/blob/main/hermes/README.md#permissions-and-data) for details.
 
 ## Development
 

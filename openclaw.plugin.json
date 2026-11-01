@@ -1,29 +1,71 @@
 {
   "id": "iris-chat-channel",
   "name": "Iris Chat",
-  "version": "0.1.0",
-  "description": "Private Iris messages as a native OpenClaw channel.",
-  "channels": ["iris"],
-  "cliCommands": [{"name": "iris", "description": "Set up the Iris Chat channel", "hasSubcommands": true}],
-  "activation": {"onStartup": true, "onCommands": ["iris"]},
-  "configSchema": {"type": "object", "additionalProperties": false, "properties": {}},
+  "version": "0.1.1",
+  "description": "Chat with your agent through Iris: Signal-like messaging with Nostr Double Ratchet encryption, without phone numbers or signup.",
+  "channels": [
+    "iris"
+  ],
+  "cliCommands": [
+    {
+      "name": "iris",
+      "description": "Set up the Iris Chat channel",
+      "hasSubcommands": true
+    }
+  ],
+  "activation": {
+    "onStartup": true,
+    "onCommands": [
+      "iris"
+    ]
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  },
   "channelConfigs": {
     "iris": {
       "schema": {
-        "type": "object", "additionalProperties": false,
+        "type": "object",
+        "additionalProperties": false,
         "properties": {
-          "enabled": {"type": "boolean"},
-          "owner": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-          "stateDir": {"type": "string"},
-          "bridgeUrl": {"type": "string", "enum": ["http://127.0.0.1:8765"]},
-          "irisPath": {"type": "string"},
-          "pythonPath": {"type": "string"}
+          "enabled": {
+            "type": "boolean"
+          },
+          "owner": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "stateDir": {
+            "type": "string"
+          },
+          "bridgeUrl": {
+            "type": "string",
+            "enum": [
+              "http://127.0.0.1:8765"
+            ]
+          },
+          "irisPath": {
+            "type": "string"
+          },
+          "pythonPath": {
+            "type": "string"
+          }
         }
       },
       "uiHints": {
-        "owner": {"label": "Approved Iris contact", "help": "Set with openclaw iris setup."},
-        "stateDir": {"label": "Persistent Iris state directory"},
-        "bridgeUrl": {"label": "Managed transport (optional)", "advanced": true}
+        "owner": {
+          "label": "Approved Iris contact",
+          "help": "Set with openclaw iris setup."
+        },
+        "stateDir": {
+          "label": "Persistent Iris state directory"
+        },
+        "bridgeUrl": {
+          "label": "Managed transport (optional)",
+          "advanced": true
+        }
       }
     }
   }
