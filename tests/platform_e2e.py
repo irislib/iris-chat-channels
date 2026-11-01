@@ -20,13 +20,19 @@ from local_relay import Relay
 from model_fixture import ModelServer
 
 ROOT = Path('/tmp/channels')
+PLUGIN_ROOT = ROOT
 
 
 def main():
+    global PLUGIN_ROOT
     parser = argparse.ArgumentParser()
     parser.add_argument('host', choices=['opencode', 'pi', 'nanobot', 'zeroclaw'])
     parser.add_argument('--attempt', default='1')
+    parser.add_argument('--plugin-root', default=str(ROOT))
     args = parser.parse_args()
+    PLUGIN_ROOT = Path(args.plugin_root).resolve()
+    if not str(PLUGIN_ROOT).startswith('/tmp/'):
+        raise ValueError('Use only a temporary plugin directory inside the test container.')
     root = Path('/tmp/iris-e2e') / (args.host + '-' + args.attempt)
     if root.exists():
         raise RuntimeError('Use a fresh disposable test directory; preserve previous failure evidence.')
@@ -169,7 +175,7 @@ def start_host(host, root, state, start):
     if host == 'opencode':
         shutil.copytree('/tmp/opencode-deps', root / 'home/.config/opencode')
         (state / 'opencode.json').write_text(json.dumps({'enabled': True, 'directory': '/tmp/test-workspace'}))
-        config = {'$schema': 'https://opencode.ai/config.json', 'plugin': ['file:///tmp/channels/opencode/index.mjs'],
+        config = {'$schema': 'https://opencode.ai/config.json', 'plugin': [(PLUGIN_ROOT / 'opencode/index.mjs').as_uri()],
             'model': 'fixture/iris-fixture', 'provider': {'fixture': {'npm': '@ai-sdk/openai-compatible',
                 'options': {'baseURL': 'http://127.0.0.1:18778/v1', 'apiKey': 'fixture'},
                 'models': {'iris-fixture': {'name': 'Fixture', 'limit': {'context': 65536, 'output': 4096}}}}},
@@ -197,7 +203,7 @@ def start_host(host, root, state, start):
                 'contextWindow': 65536, 'maxTokens': 4096,
                 'cost': {'input': 0, 'output': 0, 'cacheRead': 0, 'cacheWrite': 0}}]}}}))
         return start('host', ['/tmp/bin/pi/pi', '--mode', 'rpc', '--no-session', '--provider', 'fixture',
-            '--model', 'iris-fixture', '--extension', '/tmp/channels/pi/index.mjs'], {'IRIS_PI_STATE_DIR': str(state)})
+            '--model', 'iris-fixture', '--extension', str(PLUGIN_ROOT / 'pi/index.mjs')], {'IRIS_PI_STATE_DIR': str(state)})
     if host == 'nanobot':
         config_path = root / 'nanobot.json'
         config_path.write_text(json.dumps({
@@ -283,7 +289,7 @@ owner = "{owner}"
 channel = "plugin.iris"
 external_peers = ["{owner}"]
 ''')
-        start('bridge', ['python3', str(ROOT / 'zeroclaw/bridge.py'), '--state', str(state)])
+        start('bridge', ['python3', str(PLUGIN_ROOT / 'zeroclaw/bridge.py'), '--state', str(state)])
         for _ in range(100):
             if (root / 'bridge.log').exists() and 'ready on loopback' in (root / 'bridge.log').read_text():
                 break

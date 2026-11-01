@@ -22,6 +22,6 @@ The WASM component grants no general filesystem access. Its `config_read` and `h
 
 Only the paired contact is accepted by the bridge, component, and ZeroClaw peer policy. Text replies, seen receipts, and typing are supported. No groups or attachments. Remote approval dialogs are unsupported; ZeroClaw retains its normal approval policy. Incoming tasks run one at a time. Preserve the private state directory; interrupted tasks are reported without repeating their tools.
 
-Messages are decrypted for ZeroClaw and its model provider. The channel does not restrict the agent's own tools. No telemetry or automatic software downloads. Keep your signature-verification policy; strict installations require a signature from a publisher you explicitly trust.
+Messages are decrypted for ZeroClaw and its model provider. The channel does not restrict the agent's own tools. No telemetry or automatic software downloads. The component release is unsigned and includes its SHA-256. Keep your signature-verification policy; strict installations must sign it with a publisher key you explicitly trust.
 
 For source builds, see [the component](plugin/README.md). [Source and releases](https://github.com/irislib/iris-chat-channels) · [Iris Chat](https://irischat.org)

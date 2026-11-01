@@ -21,7 +21,7 @@ Use Iris CLI 2026.10.30, Linux x86_64 asset SHA-256 `e4da5384fb713546db2af1f3b08
 
 Install the nanobot lock with `uv pip install --require-hashes --only-binary :all: --python-version 3.13 --python-platform x86_64-unknown-linux-gnu --target /tmp/python -r tests/nanobot-requirements.lock`, then install the Iris wheel into that same target. Copy the OpenCode lock and package manifest as `package-lock.json` and `package.json` into a directory, run `npm ci --ignore-scripts` before disabling networking, and place that directory at `/tmp/opencode-deps`.
 
-Build the ZeroClaw component with Rust 1.99.0 (`rustc b940084d7`, `wasm32-wasip2` target), `cargo build --locked --target wasm32-wasip2 --release`. Put `iris_chat.wasm` and its source `manifest.toml` in `/tmp/zeroclaw-package`. Its test uses a throwaway Ed25519 publisher and strict host verification; it never disables the installer compatibility check. Build dependencies are in `zeroclaw/plugin/Cargo.lock`, and the WIT provenance is in `wit/UPSTREAM_REF`.
+Build the ZeroClaw component with `python3 scripts/build-wasm.py`. The recipe requires Rust 1.99.0 (`rustc b940084d7`, `wasm32-wasip2` target), uses a locked release build, and remaps machine-specific source paths. Put `iris_chat.wasm` and its source `manifest.toml` in `/tmp/zeroclaw-package`. Its test uses a throwaway Ed25519 publisher and strict host verification; it never disables the installer compatibility check. Build dependencies are in `zeroclaw/plugin/Cargo.lock`, and the WIT provenance is in `wit/UPSTREAM_REF`.
 
 Run each host separately, since they share fixture ports:
 
@@ -36,3 +36,5 @@ PYTHONPATH=/tmp/python python3 -m unittest discover -s /tmp/channels/tests -p te
 Each run checks pairing, plugin startup, encrypted inbound delivery, model invocation, actual file-tool output, an encrypted reply, a second turn, a seen receipt, and successful typing refresh/stop commands. OpenCode also requests and receives one-time permission over Iris. Failed attempts retain container-only diagnostics; `--attempt NAME` creates a separate throwaway run. Logs may contain throwaway private chat state: publish only the sanitized test result, then remove the test container. Never attach live identities or expose test ports.
 
 Packaging: `python3 scripts/package.py` builds deterministic tarballs and the nanobot wheel from committed `HEAD`, embedding its full source commit. It does not fetch or execute package scripts. Compare `dist/SHA256SUMS` across repeated packaging runs. WASM hashes may vary with compiler/system changes; a successful functional test is not a cross-toolchain reproducibility claim.
+
+`python3 scripts/package-wasm.py` adds the component ZIP and checksum. The release component is unsigned; strict users must sign with a publisher key they choose to trust. The strict-install test signs an unchanged component payload with a throwaway test key.
