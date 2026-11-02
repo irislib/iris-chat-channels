@@ -9,7 +9,7 @@ This native channel connects one approved Iris contact to your existing Hermes
 model and tools. Text replies, seen receipts and typing are supported.
 
 ```sh
-hermes plugins install irislib/iris-chat-channels/hermes --ref v0.2.1 --enable
+hermes plugins install irislib/iris-chat-channels/hermes --ref 155313526f82dc148aaa208bf94600b59f16db63 --enable
 hermes gateway setup
 ```
 
