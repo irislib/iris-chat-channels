@@ -5,6 +5,7 @@ Fast transport and JavaScript checks:
 ```sh
 python3 -m unittest discover -s tests -p 'test_transport.py' -v
 python3 -m unittest discover -s tests -p 'test_stdio.py' -v
+python3 -m unittest discover -s tests -p 'test_install.py' -v
 node --test tests/*.test.mjs
 cargo test --locked --manifest-path zeroclaw/plugin/Cargo.toml
 ```
@@ -36,5 +37,17 @@ PYTHONPATH=/tmp/python python3 -m unittest discover -s /tmp/channels/tests -p te
 Each run checks pairing, plugin startup, encrypted inbound delivery, model invocation, actual file-tool output, an encrypted reply, a second turn, a seen receipt, and successful typing refresh/stop commands. OpenCode also requests and receives one-time permission over Iris. Failed attempts retain container-only diagnostics; `--attempt NAME` creates a separate throwaway run. Logs may contain throwaway private chat state: publish only the sanitized test result, then remove the test container. Never attach live identities or expose test ports.
 
 Packaging: `python3 scripts/package.py` builds deterministic tarballs and the nanobot wheel from committed `HEAD`, embedding its full source commit. It does not fetch or execute package scripts. Compare `dist/SHA256SUMS` across repeated packaging runs. WASM hashes may vary with compiler/system changes; a successful functional test is not a cross-toolchain reproducibility claim.
+
+Use `--output dist/VERSION` to preserve earlier release artifacts. After packaging,
+run `IRIS_TEST_PACKAGES=1 IRIS_PACKAGE_DIR=dist/VERSION python3 -m unittest discover -s tests -p test_packages.py -v`.
+This exercises OpenClaw, OpenCode, Pi, nanobot, and ZeroClaw's packaged setup
+commands twice, verifies the CLI location survives a missing PATH entry, and
+checks that the existing identity and approved contact stay unchanged. Hermes's
+wizard checks run in `test_hermes_runtime.py` with the real pinned host.
+
+The installer tests use offline release fixtures for confirmation, corrupt
+downloads, archive links, unsupported hosts, concurrent setup, and failed
+downloads. Runtime must never download or prompt. CLI release hashes live in
+`hermes/transport.py`; update them only with verified tagged workflow artifacts.
 
 `python3 scripts/package-wasm.py` adds the component ZIP and checksum. The release component is unsigned; strict users must sign with a publisher key they choose to trust. The strict-install test signs an unchanged component payload with a throwaway test key.

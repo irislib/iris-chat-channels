@@ -3,13 +3,13 @@
 Control a dedicated OpenCode session from [Iris Chat](https://irischat.org): Signal-like messaging over Nostr Double Ratchet, without phone numbers or signup.
 
 ```sh
-npm install --prefix "$HOME/.config/opencode" @irislib/opencode-iris-chat@0.2.0
+npm install --prefix "$HOME/.config/opencode" @irislib/opencode-iris-chat@0.2.1
 "$HOME/.config/opencode/node_modules/.bin/iris-opencode-setup" /path/to/project
 ```
 
-Copy the plugin JSON printed by setup into that project's `opencode.json`, then start OpenCode there. Review the [release checksums](https://github.com/irislib/iris-chat-channels/releases/tag/v0.2.0) before installation. The package is published as [@irislib/opencode-iris-chat](https://www.npmjs.com/package/@irislib/opencode-iris-chat). Release archives are also available.
+Copy the plugin JSON printed by setup into that project's `opencode.json`, then start OpenCode there. Review the [release checksums](https://github.com/irislib/iris-chat-channels/releases/tag/v0.2.1) before installation. The package is published as [@irislib/opencode-iris-chat](https://www.npmjs.com/package/@irislib/opencode-iris-chat). Release archives are also available.
 
-Requires OpenCode 1.19.5, Node 22+, Python 3.9+, macOS/Linux (or WSL), and the [Iris CLI](https://irischat.org/#command-line-interface). Setup asks for your public Iris ID and an invite from your app. No personal secret key is needed. Keep Iris online for first contact.
+Requires OpenCode 1.19.5, Node 22+, Python 3.9+, macOS/Linux (or WSL). Setup reuses Iris or offers to install the tested CLI release for you, with no administrator access or PATH changes. Automatic installation supports Apple Silicon/Intel Macs and x86_64 Linux; other systems need a compatible [Iris CLI](https://irischat.org/#command-line-interface). Setup asks for your public Iris ID and an invite from your app. No personal secret key is needed. Keep Iris online for first contact.
 
 Only the paired project and contact can start tasks. OpenCode retains its model and tool permissions. Reply `/approve ID` or `/deny ID` to a pending permission prompt; approval applies once. `/stop` cancels the current Iris task. Other OpenCode sessions are not forwarded.
 
@@ -18,3 +18,5 @@ Text, seen receipts, and typing while busy are supported. Interrupted tasks are 
 The plugin runs the installed Iris CLI and a Python transport. Iris holds its own identity and history in the selected profile. Messages are decrypted for OpenCode and its configured model provider; encryption does not hide prompts from that provider. The plugin does not isolate agent tools from your computer. Use a separate container or machine when needed. No groups, attachments, telemetry, or automatic plugin downloads.
 
 [Source and releases](https://github.com/irislib/iris-chat-channels) · [Iris Chat](https://irischat.org)
+
+During setup only, an approved CLI download comes from a tagged GitHub release and is checked against a bundled SHA-256. The CLI location is saved in the channel folder for future starts. Existing identities and installations are preserved; runtime never downloads software.

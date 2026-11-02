@@ -3,6 +3,7 @@ import asyncio
 import importlib.util
 from pathlib import Path
 import sys
+import tempfile
 import unittest
 from unittest.mock import AsyncMock, patch
 
@@ -90,6 +91,41 @@ class HermesNative(unittest.IsolatedAsyncioTestCase):
         handler.assert_not_awaited()
         result = await self.adapter.send('b'*64,'wrong recipient')
         self.assertFalse(result.success)
+
+
+@unittest.skipUnless(AVAILABLE, 'Run in the pinned Hermes host')
+class HermesSetup(unittest.TestCase):
+    def test_setup_installs_before_pairing_and_saves_the_selected_profile(self):
+        from hermes.adapter import setup_wizard
+        with tempfile.TemporaryDirectory() as temporary, \
+                patch('hermes_cli.config.get_hermes_home', return_value=temporary), \
+                patch('hermes_cli.config.save_env_value') as save, \
+                patch('hermes.adapter.ensure_iris', return_value='/channel/bin/iris') as install, \
+                patch('hermes.adapter.pair_transport', new_callable=AsyncMock, return_value={'owner': OWNER}) as pair, \
+                patch('builtins.input', return_value=OWNER), \
+                patch('hermes.adapter.getpass.getpass', return_value='fixture-invite'):
+            setup_wizard()
+            state = Path(temporary) / 'iris-channel'
+            install.assert_called_once_with(state)
+            pair.assert_awaited_once_with(str(state), '/channel/bin/iris', 'Hermes', OWNER, 'fixture-invite')
+            self.assertEqual(save.call_args_list[-1].args, ('IRIS_CHANNEL_OWNER', OWNER))
+
+    def test_repeat_setup_preserves_contact_and_never_pairs_again(self):
+        from hermes.adapter import setup_wizard
+        from hermes.transport import atomic_json
+        with tempfile.TemporaryDirectory() as temporary:
+            state = Path(temporary) / 'iris-channel'
+            state.mkdir()
+            atomic_json(state / 'pairing.json', {'owner_hex': OWNER, 'chat_id': OWNER})
+            with patch('hermes_cli.config.get_hermes_home', return_value=temporary), \
+                    patch('hermes_cli.config.save_env_value'), \
+                    patch('hermes.adapter.ensure_iris', return_value='/channel/bin/iris') as install, \
+                    patch('hermes.adapter.pair_transport', new_callable=AsyncMock) as pair, \
+                    patch('builtins.input') as prompt:
+                setup_wizard()
+                install.assert_called_once_with(state)
+                pair.assert_not_awaited()
+                prompt.assert_not_called()
 
 
 if __name__ == '__main__': unittest.main()

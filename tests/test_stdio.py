@@ -5,6 +5,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from hermes.transport import ensure_iris
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -14,7 +15,10 @@ class StdioContract(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             state = Path(tmp)
             args = [sys.executable,str(ROOT/'hermes/transport.py')]
-            options = ['--state',tmp,'--binary',str(ROOT/'tests/fake_iris.py')]
+            # Setup remembers the CLI outside PATH; fresh gateway processes must
+            # use that saved location without downloading or receiving --binary.
+            ensure_iris(state, str(ROOT/'tests/fake_iris.py'))
+            options = ['--state',tmp]
             request = {'owner':'a'*64,'invite':'fixture-invite','name':'Fixture agent'}
             first = subprocess.run([*args,'setup',*options],input=json.dumps(request),capture_output=True,text=True,timeout=20,check=True)
             self.assertFalse(json.loads(first.stdout)['already_paired'])

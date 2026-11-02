@@ -9,20 +9,25 @@ This native channel connects one approved Iris contact to your existing Hermes
 model and tools. Text replies, seen receipts and typing are supported.
 
 ```sh
-hermes plugins install irislib/iris-chat-channels/hermes --ref 202a422c81eec3246bf19cb45657fc3513c2ac9a --enable
+hermes plugins install irislib/iris-chat-channels/hermes --ref v0.2.1 --enable
 hermes gateway setup
 ```
 
 Choose Iris Chat, then run `hermes gateway run` or restart your gateway.
 
-Requires Hermes 0.22.5+, Python 3.9+, macOS/Linux, and the Iris CLI (tested with
-2026.10.30). Setup creates a separate local agent identity; it never needs your
+Requires Hermes 0.22.5+, Python 3.9+, and macOS/Linux. Setup reuses Iris or
+offers to install the tested CLI release for you, with no PATH changes or
+administrator access. Automatic installation supports Apple Silicon/Intel Macs
+and x86_64 Linux; other systems need a compatible Iris CLI. Setup creates a separate local agent identity; it never needs your
 personal secret key. Keep the private Iris state directory across updates.
 
 ## Permissions and data
 
-- Invokes the installed `iris` CLI with argument lists, without a shell. It does
-  not download software. The CLI creates and stores its own keys, message history
+- Invokes the `iris` CLI with argument lists, without a shell. With your
+  confirmation, setup downloads Iris 2026.10.30 from its tagged GitHub release,
+  verifies the bundled SHA-256, and saves it in the channel folder. Existing
+  installations are reused and never upgraded automatically. Gateway startup
+  never downloads software. The CLI creates and stores its own keys, message history
   and service state in the dedicated `iris-channel` directory inside the selected
   Hermes profile. The plugin stores contact policy and delivery state beside it;
   it never reads another application's login credentials or imports your keys.

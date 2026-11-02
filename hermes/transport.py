@@ -12,10 +12,135 @@ import getpass
 import json
 import os
 from pathlib import Path
+import platform
+import shutil
 import sqlite3
+import subprocess
 import sys
+import tarfile
+import tempfile
 import time
 import urllib.request
+
+
+# Tagged GitHub workflow artifacts, pinned here rather than trusting a mutable
+# installer or fetching checksums from the same server during installation.
+IRIS_VERSION = '2026.10.30'
+IRIS_RELEASES = {
+    ('Darwin', 'arm64'): ('aarch64-apple-darwin', '79748e246adbfebae3fb353ebe9e9d61dee257f741891c1bc474552ede8782ca'),
+    ('Darwin', 'x86_64'): ('x86_64-apple-darwin', 'cc60426826970b0d8c2faadd7fab8cbd54b52b76e8e08704006a301d6859e717'),
+    ('Linux', 'x86_64'): ('x86_64-unknown-linux-gnu', 'e4da5384fb713546db2af1f3b087fdc134ee1d4e73e40d6d32cb1643280037eb'),
+}
+
+
+class IrisInstallError(RuntimeError):
+    """A setup error safe to display without private contact or profile data."""
+
+
+def resolve_iris(state, binary='iris'):
+    if binary != 'iris':
+        return str(Path(binary).expanduser())
+    saved = Path(state).expanduser() / 'cli.json'
+    if saved.exists():
+        try:
+            path = json.loads(saved.read_text())['path']
+            if not isinstance(path, str) or not Path(path).is_absolute():
+                raise ValueError()
+            return path
+        except (ValueError, KeyError, TypeError):
+            raise IrisInstallError('The saved Iris location is invalid. Fix cli.json in the channel folder and rerun setup.') from None
+    return shutil.which('iris') or 'iris'
+
+
+def check_iris(binary):
+    try:
+        result = subprocess.run([binary, '--version'], stdin=subprocess.DEVNULL,
+            capture_output=True, text=True, timeout=15, check=True)
+        if not result.stdout.strip().startswith('iris '):
+            raise ValueError()
+    except (OSError, subprocess.SubprocessError, ValueError):
+        raise IrisInstallError('Iris could not run. Check the installed CLI and system libraries, then rerun setup. The existing installation was preserved.') from None
+
+
+def download_iris(destination, target, digest):
+    name = f'iris-v{IRIS_VERSION}-{target}.tar.gz'
+    url = f'https://github.com/irislib/iris-chat-rs/releases/download/v{IRIS_VERSION}/{name}'
+    # The staging directory is task-owned and on the same filesystem as the
+    # destination. Only the named regular binary is copied; no archive paths,
+    # links, permissions, or installer scripts are extracted or executed.
+    with tempfile.TemporaryDirectory(prefix='.iris-install-', dir=destination.parent) as temporary:
+        folder = Path(temporary)
+        archive = folder / 'release.tar.gz'
+        checksum = hashlib.sha256()
+        size = 0
+        try:
+            with urllib.request.urlopen(url, timeout=60) as source, archive.open('wb') as output:
+                while chunk := source.read(1024 * 1024):
+                    size += len(chunk)
+                    if size > 128 * 1024 * 1024:
+                        raise IrisInstallError('The Iris download exceeded the expected size. Nothing was installed.')
+                    checksum.update(chunk)
+                    output.write(chunk)
+        except (OSError, TimeoutError):
+            raise IrisInstallError('Could not download Iris. Check your internet connection and free disk space, then rerun setup.') from None
+        if checksum.hexdigest() != digest:
+            raise IrisInstallError('The Iris download failed its checksum check. Nothing was installed; rerun setup to retry.')
+        staged = folder / 'iris'
+        try:
+            with tarfile.open(archive, 'r:gz') as bundle:
+                candidates = [member for member in bundle if member.name == 'iris/iris']
+                if len(candidates) != 1 or not candidates[0].isfile() or not 0 < candidates[0].size <= 256 * 1024 * 1024:
+                    raise IrisInstallError('The Iris release archive does not contain a valid CLI binary.')
+                with bundle.extractfile(candidates[0]) as source, staged.open('wb') as output:
+                    shutil.copyfileobj(source, output, 1024 * 1024)
+            staged.chmod(0o755)
+            check_iris(str(staged))
+            # link is atomic and refuses to replace a destination created by
+            # another process, unlike rename/replace.
+            os.link(staged, destination)
+        except (tarfile.TarError, OSError):
+            raise IrisInstallError('Could not install the Iris release archive. Check the channel folder and free disk space, then rerun setup.') from None
+
+
+def ensure_iris(state, binary='iris'):
+    """Interactive setup only. Runtime resolution never prompts or downloads."""
+    state = Path(state).expanduser().resolve()
+    candidate = resolve_iris(state, binary)
+    existing = shutil.which(candidate)
+    if existing:
+        selected = str(Path(existing).absolute())
+        check_iris(selected)
+    else:
+        if binary != 'iris' or (state / 'cli.json').exists():
+            raise IrisInstallError('The configured Iris CLI is missing. Restore it or correct its configured location, then rerun setup.')
+        release = IRIS_RELEASES.get((platform.system(), platform.machine()))
+        if not release:
+            raise IrisInstallError('Automatic Iris installation is unavailable on this platform. Please install the Iris CLI yourself, then rerun setup: https://irischat.org/#command-line-interface')
+        try:
+            accepted = input(f'Iris is missing. Install Iris {IRIS_VERSION} for this channel? [Y/n] ').strip().lower()
+        except EOFError:
+            raise IrisInstallError('Run setup in a terminal to install Iris, or install the Iris CLI yourself and rerun setup.') from None
+        if accepted not in ('', 'y', 'yes'):
+            raise IrisInstallError('Iris was not installed. Install the CLI yourself or rerun setup when ready.')
+        selected = str(state / 'bin/iris')
+    state.mkdir(parents=True, exist_ok=True, mode=0o700)
+    with (state / 'install.lock').open('a') as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise IrisInstallError('Another Iris setup is running. Wait for it to finish, then rerun setup.') from None
+        if not existing:
+            destination = Path(selected)
+            destination.parent.mkdir(exist_ok=True, mode=0o700)
+            if destination.is_symlink():
+                raise IrisInstallError('The Iris install location is a link. Preserve it and choose an existing CLI explicitly.')
+            if destination.exists():
+                check_iris(selected)
+            else:
+                print(f'Downloading and checking Iris {IRIS_VERSION}…', flush=True)
+                download_iris(destination, *release)
+        atomic_json(state / 'cli.json', {'path': selected})
+    return selected
 
 
 def owner_hex(value):
@@ -65,7 +190,7 @@ class Transport:
     def __init__(self, state_dir, binary='iris', profile_dir=None):
         self.state = Path(state_dir).expanduser().resolve()
         self.profile = Path(profile_dir).resolve() if profile_dir else self.state / 'profile'
-        self.binary = binary
+        self.binary = resolve_iris(self.state, binary)
         self.service = None
         self.lock = None
         self.operation_lock = asyncio.Lock()
@@ -337,6 +462,7 @@ if __name__ == '__main__':
             request = json.load(sys.stdin)
             print(json.dumps(asyncio.run(setup(args.state, args.binary, request['name'], request['owner'], request['invite']))))
         else:
+            args.binary = ensure_iris(args.state, args.binary)
             transport = Transport(args.state, args.binary)
             if (transport.state / 'pairing.json').exists():
                 transport.policy()
@@ -349,6 +475,9 @@ if __name__ == '__main__':
                     raise ValueError('A private invite is required.')
                 asyncio.run(setup(args.state, args.binary, args.name, owner, invite))
                 print('Iris identity created and paired.')
+    except IrisInstallError as error:
+        print(str(error), file=sys.stderr)
+        sys.exit(1)
     except Exception:
         print('Iris channel could not start. Check CLI installation, pairing, and the private transport log.', file=sys.stderr)
         sys.exit(1)

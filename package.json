@@ -1,6 +1,6 @@
 {
   "name": "@irislib/openclaw-iris-chat",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Iris Chat channel: Signal-like messaging with Nostr Double Ratchet encryption, without phone numbers or signup.",
   "type": "module",
   "license": "MIT",

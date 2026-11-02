@@ -5,7 +5,6 @@ import getpass
 import hashlib
 import logging
 from pathlib import Path
-import shutil
 import uuid
 
 from gateway.config import Platform
@@ -14,7 +13,7 @@ from gateway.platforms.access_policy_mixin import OwnAccessPolicyMixin
 from gateway.platforms.base import BasePlatformAdapter, SendResult
 from gateway.platforms.event import MessageEvent, MessageType
 
-from .transport import Client, owner_hex, setup as pair_transport
+from .transport import Client, owner_hex, ensure_iris, setup as pair_transport
 
 log = logging.getLogger(__name__)
 
@@ -149,8 +148,7 @@ def env_enablement():
 def setup_wizard():
     from hermes_cli.config import get_hermes_home, save_env_value
     state = Path(get_hermes_home()) / 'iris-channel'
-    if not shutil.which('iris'):
-        raise RuntimeError('Install the Iris CLI first: https://github.com/irislib/iris-chat-rs/blob/main/docs/agents.md#install')
+    binary = ensure_iris(state)
     print('Iris creates a separate agent identity. It does not need your secret key.')
     policy = state / 'pairing.json'
     if policy.exists():
@@ -162,7 +160,7 @@ def setup_wizard():
         invite = getpass.getpass('Your private Iris invite link: ').strip()
         if not invite:
             raise ValueError('A private invite is required for first contact.')
-        result = asyncio.run(pair_transport(str(state), 'iris', 'Hermes', owner, invite))
+        result = asyncio.run(pair_transport(str(state), binary, 'Hermes', owner, invite))
         owner = result['owner']
     save_env_value('IRIS_CHANNEL_STATE_DIR', str(state))
     save_env_value('IRIS_CHANNEL_OWNER', owner)
@@ -190,10 +188,10 @@ async def standalone_send(config, chat_id, message, **kwargs):
 
 def register(ctx):
     ctx.register_platform(name='iris', label='Iris Chat', adapter_factory=IrisAdapter,
-        check_fn=lambda: bool(get_scoped_secret('IRIS_CHANNEL_BRIDGE_URL', '') or shutil.which('iris')),
+        check_fn=lambda: True,  # The setup wizard can install the only external dependency.
         validate_config=lambda config: bool(extra_or_secret(config.extra, 'state_dir', 'IRIS_CHANNEL_STATE_DIR') or extra_or_secret(config.extra, 'bridge_url', 'IRIS_CHANNEL_BRIDGE_URL')),
         setup_fn=setup_wizard, env_enablement_fn=env_enablement,
-        required_env=[], install_hint='Install iris, then run hermes gateway setup and select Iris Chat.',
+        required_env=[], install_hint='Run hermes gateway setup and select Iris Chat; setup can install Iris if needed.',
         allowed_users_env='IRIS_CHANNEL_OWNER', allowlist_suppresses_pairing=True,
         cron_deliver_env_var='IRIS_CHANNEL_OWNER', standalone_sender_fn=standalone_send,
         parse_target_ref_fn=lambda value: (owner_hex(value.removeprefix('iris:')), None),

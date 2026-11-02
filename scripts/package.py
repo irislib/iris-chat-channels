@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Package exactly one committed source tree without executing package scripts."""
 import base64
+import argparse
 import csv
 import datetime
 import gzip
@@ -18,13 +19,16 @@ def git(*args):
     return subprocess.check_output(['git',*args],cwd=ROOT)
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--output', type=Path, default=ROOT/'dist')
+    args = parser.parse_args()
     commit = git('rev-parse','HEAD').decode().strip()
     epoch = int(git('show','-s','--format=%ct',commit))
     paths = git('ls-tree','-r','--name-only',commit).decode().splitlines()
     read = lambda name: git('show',commit+':'+name)
     version = json.loads(read('package.json'))['version']
-    destination = ROOT/'dist'
-    destination.mkdir(exist_ok=True)
+    destination = args.output
+    destination.mkdir(parents=True, exist_ok=True)
     sums = []
     for kind in ('openclaw','hermes','opencode','pi','zeroclaw-bridge'):
         if kind == 'openclaw':

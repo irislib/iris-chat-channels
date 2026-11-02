@@ -8,6 +8,10 @@ import signal
 import sys
 import time
 
+if sys.argv[1:] == ['--version']:
+    print('iris 2026.10.30')
+    raise SystemExit(0)
+
 state = Path(os.environ['IRIS_DATA_DIR'])
 args = [a for a in sys.argv[1:] if a not in ('--json','--no-background-sync')]
 owner = 'a'*64

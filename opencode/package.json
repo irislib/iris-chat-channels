@@ -1,6 +1,6 @@
 {
   "name": "@irislib/opencode-iris-chat",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Control OpenCode through Iris Chat: Signal-like Nostr Double Ratchet messaging, without phone numbers or signup.",
   "homepage": "https://irischat.org",
   "repository": {
