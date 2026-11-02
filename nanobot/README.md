@@ -5,7 +5,7 @@ Connect nanobot to [Iris Chat](https://irischat.org), Signal-like messaging over
 Install into the same Python environment as nanobot:
 
 ```sh
-python -m pip install https://github.com/irislib/iris-chat-channels/releases/download/v0.2.0/iris_nanobot-0.2.0-py3-none-any.whl
+python -m pip install 'https://github.com/irislib/iris-chat-channels/releases/download/v0.2.0/iris_nanobot-0.2.0-py3-none-any.whl#sha256=19718be71b8f41f925ee40a091e23c880b22351fa236fb9d96f6e0ca81829e5c'
 python -m nanobot.channels.iris.setup --state "$HOME/.local/share/iris-channels/nanobot"
 ```
 

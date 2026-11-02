@@ -2,7 +2,7 @@
 
 Connect ZeroClaw to [Iris Chat](https://irischat.org): Signal-like messaging over Nostr Double Ratchet, without phone numbers or signup.
 
-Download the component package and `iris-zeroclaw-bridge-0.2.0.tgz` from [Releases](https://github.com/irislib/iris-chat-channels/releases/tag/v0.2.0), verify `SHA256SUMS`, and extract each into its own directory. From the bridge directory:
+Download [`iris-zeroclaw-0.2.0.zip`](https://github.com/irislib/iris-chat-channels/releases/download/v0.2.0/iris-zeroclaw-0.2.0.zip) and [`iris-zeroclaw-bridge-0.2.0.tgz`](https://github.com/irislib/iris-chat-channels/releases/download/v0.2.0/iris-zeroclaw-bridge-0.2.0.tgz), verify [`SHA256SUMS`](https://github.com/irislib/iris-chat-channels/releases/download/v0.2.0/SHA256SUMS), and extract each into its own directory. From the bridge directory:
 
 ```sh
 zeroclaw plugin install /path/to/component-package

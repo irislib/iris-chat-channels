@@ -8,7 +8,13 @@ messaging over local networks and Bluetooth.
 This native channel connects one approved Iris contact to your existing Hermes
 model and tools. Text replies, seen receipts and typing are supported.
 
-See the [installation guide](https://github.com/irislib/iris-chat-channels#hermes).
+```sh
+hermes plugins install irislib/iris-chat-channels/hermes --ref 202a422c81eec3246bf19cb45657fc3513c2ac9a --enable
+hermes gateway setup
+```
+
+Choose Iris Chat, then run `hermes gateway run` or restart your gateway.
+
 Requires Hermes 0.22.5+, Python 3.9+, macOS/Linux, and the Iris CLI (tested with
 2026.10.30). Setup creates a separate local agent identity; it never needs your
 personal secret key. Keep the private Iris state directory across updates.
