@@ -1,6 +1,7 @@
 import { createChatChannelPlugin } from 'openclaw/plugin-sdk/channel-core';
 import { createChannelMessageAdapterFromOutbound } from 'openclaw/plugin-sdk/channel-outbound';
 import { chunkTextForOutbound, sanitizeAssistantVisibleText } from 'openclaw/plugin-sdk/text-chunking';
+import { irisApprovals } from './approvals.mjs';
 import { normalizeOwner, maybeOwner } from './identity.mjs';
 
 export function resolveAccount(cfg, accountId = 'default') {
@@ -37,6 +38,7 @@ export const irisPlugin = createChatChannelPlugin({
       resolveAllowFrom: ({ cfg }) => { const owner = resolveAccount(cfg).owner; return owner ? [owner] : []; },
       resolveDefaultTo: ({ cfg }) => resolveAccount(cfg).owner ?? undefined,
     },
+    approvalCapability: irisApprovals,
     setup: { validateInput: () => 'Run openclaw iris setup to create and pair a dedicated identity.' },
     messaging: { targetPrefixes: ['iris'], normalizeTarget: value => maybeOwner(value) ?? undefined,
       inferTargetChatType: ({ to }) => maybeOwner(to) ? 'direct' : undefined,

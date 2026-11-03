@@ -123,15 +123,17 @@ def main():
             messages = run(peer, 'read', agent, '--limit', '30')['messages']
             if args.host == 'opencode':
                 for message in messages:
-                    if message.get('is_outgoing') is False and message.get('body', '').startswith('Permission requested: read'):
-                        match = re.search(r'/approve ([a-zA-Z0-9_-]+)', message['body'])
-                        if match and match[1] not in approvals:
-                            run(peer, 'send', agent, '/approve ' + match[1])
-                            approvals.add(match[1])
+                    body = message.get('body', '')
+                    if (not message.get('is_outgoing') and body.startswith('Permission request ') and
+                            '\nread\n' in body and message['id'] not in approvals):
+                        snippet = body.replace('\n', ' ')[:96]
+                        run(peer, 'send', agent, f"↩ {message['author']}: {snippet}\n\nallow once")
+                        approvals.add(message['id'])
             return [m for m in messages if m.get('is_outgoing') is False and m.get('body') == 'IRIS_TEST_OK']
         wait_until(first_reply, 150)
         if args.host == 'opencode':
-            assert approvals, 'Read permission was not requested and approved through Iris.' 
+            assert approvals, 'Read permission was not requested and approved through Iris.'
+            assert any(m.get('body') == 'Allowed once.' for m in run(peer, 'read', agent, '--limit', '30')['messages'])
         print(json.dumps({'host': args.host, 'step': 'first_reply'}), flush=True)
         initial_calls = len(model.requests)
         request = run(peer, 'send', agent, 'Read the test marker and report the result.')

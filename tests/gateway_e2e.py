@@ -20,6 +20,9 @@ events = []
 model_calls = []
 claimed = False
 finished = False
+test_approval = "--approval" in sys.argv
+reviewed = False
+tool_output = False
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -34,26 +37,41 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.reply({'models':[{'name':'fixture-model','model':'fixture-model'}]})
     def do_POST(self):
-        global claimed, finished
+        global claimed, finished, reviewed, tool_output
         data = json.loads(self.rfile.read(int(self.headers.get('Content-Length',0))))
         if self.path.startswith('/channel/'):
             op = self.path.removeprefix('/channel/')
             events.append((op,data))
             result = {}
             if op == 'health': result = {'owner':OWNER,'ready':True,'protocol':1}
+            elif op == 'approval':
+                result = {'message_id': 'fixture-approval'}
             elif op == 'receive':
                 result = None
                 if not claimed:
                     claimed = True
                     result = {'id':JOB_ID,'text':'Reply with NATIVE_IRIS_OK.','owner':OWNER,'created':time.time(),'interrupted':False}
+                elif test_approval and not reviewed:
+                    prompt = next((payload for name, payload in events if name == 'approval'), None)
+                    if prompt:
+                        assert 'allow once' in prompt['choices'] and 'iris-permission-marker' in prompt['details']
+                        reviewed = True
+                        result = {'id': 'fixture-decision', 'text': 'quoted reply', 'owner': OWNER, 'interrupted': False,
+                                  'created': time.time(), 'approval_reply': {'key': prompt['key'], 'decision': 'allow-once'}}
             elif op == 'send': result = {'message_id':'fixture-response','delivery':'sent'}
-            elif op == 'finish': finished = True
+            elif op == 'finish' and data['id'] == JOB_ID: finished = True
             self.reply({'ok':True,'result':result})
         elif self.path == '/api/chat':
             model_calls.append(self.path)
             time.sleep(6)
+            assistant = {'role': 'assistant', 'content': 'NATIVE_IRIS_OK'}
+            if test_approval:
+                tool_output = any(m.get('role') == 'tool' and 'IRIS_EXECUTED_OK' in str(m.get('content')) for m in data['messages'])
+                if len(model_calls) == 1:
+                    assistant = {'role':'assistant', 'content':'', 'tool_calls':[{'function':{'name':'exec',
+                                 'arguments':{'command':'cat /tmp/iris-permission-marker'}}}]}
             self.reply({'model':'fixture-model','created_at':'2026-11-01T00:00:00Z',
-                'message':{'role':'assistant','content':'NATIVE_IRIS_OK'},'done':True,'done_reason':'stop',
+                'message':assistant,'done':True,'done_reason':'stop',
                 'prompt_eval_count':10,'eval_count':4}, 'application/x-ndjson')
         elif self.path == '/api/show':
             self.reply({'capabilities':['completion','tools'],'model_info':{'general.architecture':'qwen3','qwen3.context_length':65536}})
@@ -111,7 +129,9 @@ def main():
         print(json.dumps({'backend':backend,'model_calls':len(model_calls),'sends':len(sends),'typing_refreshes':len(starts),
                           'typing_stops':len(stops),'finished':finished,'gateway_exit':gateway.poll()}),flush=True)
         assert model_calls, 'Native gateway never called the model'
-        assert len(sends)==1 and sends[0]['text']=='NATIVE_IRIS_OK', 'Reply did not use Iris channel'
+        assert any(send['text'] == 'NATIVE_IRIS_OK' for send in sends), 'Reply did not use Iris channel'
+        if test_approval:
+            assert reviewed and tool_output and any(s['text'] == 'Allowed once.' for s in sends), 'No verified approval round trip'
         assert len(starts)>=2 and stops, 'Typing was not refreshed and cleared'
         assert finished, 'Native turn was not acknowledged'
     except BaseException:
@@ -142,6 +162,9 @@ def configure_openclaw():
       'gateway':{'mode':'local','auth':{'mode':'none'},'bind':'loopback'},
       'memory':{'search':{'enabled':False}},'update':{'checkOnStart':False},
     })
+    if test_approval:
+        config['tools'] = {'exec': {'host': 'gateway', 'security': 'allowlist', 'ask': 'on-miss'}}
+        Path('/tmp/iris-permission-marker').write_text('IRIS_EXECUTED_OK')
     config_path.write_text(json.dumps(config))
 
 

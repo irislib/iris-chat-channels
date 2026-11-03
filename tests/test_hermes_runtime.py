@@ -32,7 +32,7 @@ class HermesNative(unittest.IsolatedAsyncioTestCase):
         async def call(op, **data):
             self.calls.append((op,data))
             if op == 'receive': return self.jobs.pop(0) if self.jobs else None
-            if op == 'send': return {'message_id':'sent-id','delivery':'sent'}
+            if op in ('send', 'approval'): return {'message_id':'sent-id','delivery':'sent'}
             return {}
         self.client.call.side_effect = call
         with patch('hermes.adapter.client_for',return_value=self.client):
@@ -71,6 +71,41 @@ class HermesNative(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(sends[0]['text'],'A real gateway reply')
         self.assertIn(('typing',{'active':False}),self.calls)
         self.assertIn(('finish',{'id':'job1'}),self.calls)
+
+    async def test_two_host_requests_resolve_only_the_quoted_one(self):
+        from tools.approval import list_gateway_approvals
+        from tools.approval_gateway_wait import _await_gateway_decision
+
+        self.adapter.owner = OWNER
+        loop = asyncio.get_running_loop()
+        async def wait_for_choice(command):
+            def notify(data):
+                future = asyncio.run_coroutine_threadsafe(self.adapter.send_exec_approval(
+                    chat_id=OWNER, command=data['command'], session_key='iris-approval-test', description='Test'), loop)
+                assert future.result(5).success
+            return await asyncio.to_thread(_await_gateway_decision, 'iris-approval-test', notify,
+                                           {'command': command, 'description': 'Test', 'pattern_key': command})
+        first = asyncio.create_task(wait_for_choice('first'))
+        second = asyncio.create_task(wait_for_choice('second'))
+        try:
+            await self.wait_for(lambda: len([p for op,p in self.calls if op == 'approval']) == 2)
+            keys = {p['details'].splitlines()[0]: p['key'] for op,p in self.calls if op == 'approval'}
+            async def reply(key, decision):
+                return await self.adapter.handle_approval_reply({'id':'fixture', 'text':'reply',
+                    'approval_reply':{'key':key, 'decision':decision}})
+            for key, decision in ((None, 'allow-once'), (keys['first'], 'allow-always')):
+                self.assertTrue(await reply(key, decision))
+                self.assertEqual(len(list_gateway_approvals('iris-approval-test')), 2)
+            await reply(keys['second'], 'allow-once')
+            self.assertEqual((await asyncio.wait_for(second, 5))['choice'], 'once')
+            await reply(keys['second'], 'allow-once')
+            self.assertFalse(first.done())
+            await reply(keys['first'], 'deny')
+            self.assertEqual((await asyncio.wait_for(first, 5))['choice'], 'deny')
+        finally:
+            from tools.approval import resolve_gateway_approval
+            resolve_gateway_approval('iris-approval-test', 'deny', resolve_all=True)
+            await asyncio.gather(first, second, return_exceptions=True)
 
     async def test_failed_turn_and_shutdown_clear_typing(self):
         async def handler(event): raise ValueError('controlled failure')

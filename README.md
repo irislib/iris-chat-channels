@@ -41,6 +41,8 @@ Setup asks for your public Iris ID (`npub…`) and an invite link from your app.
 
 One approved direct contact per profile. Text, seen receipts, and typing are supported; groups and attachments are not. Typing stays on while working and clears afterward. Interrupted tasks are reported without automatically repeating their tools.
 
+For OpenClaw, Hermes, and OpenCode, use Reply on the specific permission message and type `allow once` or `deny`. OpenClaw also offers `always allow` when it can save that command and its arguments for the displayed folder. Each prompt lists its available choices.
+
 Keep the private Iris state directory across updates, and let only one agent process use each profile. Keep profiles, invites, and logs out of public issues. Iris encrypts transport; the agent and its configured model provider receive plaintext prompts. Each host retains its normal tool permissions. For filesystem/network isolation, see [iris-agent-dockers](https://github.com/irislib/iris-agent-dockers).
 
 The plugins run the Iris CLI and a Python transport. With your confirmation during setup, a missing CLI is downloaded from its tagged GitHub release, checked against a bundled SHA-256, and installed in the private channel folder. Existing installations and identities are preserved. Gateway startup never downloads software; there is no telemetry or self-updater. Iris connects to its configured message servers/transports and stores its own keys and history locally. See [permissions and data](https://github.com/irislib/iris-chat-channels/blob/main/hermes/README.md#permissions-and-data).

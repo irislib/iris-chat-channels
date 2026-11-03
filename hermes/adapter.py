@@ -26,6 +26,7 @@ class IrisAdapter(OwnAccessPolicyMixin, BasePlatformAdapter):
         self.client = client_for(config)
         self.owner = None
         self.pending = {}
+        self.approvals = {}
         self.thinking = set()
         self.receiver = None
         self._dm_policy = 'allowlist'
@@ -50,6 +51,7 @@ class IrisAdapter(OwnAccessPolicyMixin, BasePlatformAdapter):
 
     async def disconnect(self):
         self._mark_disconnected()
+        self.approvals.clear()
         for task in (self.receiver,):
             if task:
                 task.cancel()
@@ -70,6 +72,8 @@ class IrisAdapter(OwnAccessPolicyMixin, BasePlatformAdapter):
                             text = job.get('pending_reply') or 'My previous task was interrupted. I did not repeat it automatically. Send a new message to continue.'
                             await self.client.call('send', key='recovery:'+job['id'], text=text)
                             await self.client.call('finish', id=job['id'])
+                        elif await self.handle_approval_reply(job):
+                            await self.client.call('finish', id=job['id'])
                         else:
                             self.pending[job['id']] = job
                             event = MessageEvent(text=job['text'], message_type=MessageType.TEXT,
@@ -87,6 +91,48 @@ class IrisAdapter(OwnAccessPolicyMixin, BasePlatformAdapter):
             except Exception:
                 log.warning('Iris receive is waiting for transport recovery; no task is replayed.')
             await asyncio.sleep(2)
+
+    async def _send_exec_approval_prompt(self, prompt):
+        from gateway.run import _redact_approval_command
+        from tools.approval import list_gateway_approvals
+
+        if owner_hex(prompt.chat_id) != self.owner:
+            return SendResult(success=False, error='Unapproved Iris chat.')
+        # This Hermes version passes the display command, but not the request ID,
+        # to adapters. Bind only an unambiguous live entry; never resolve FIFO.
+        live = list_gateway_approvals(prompt.session_key)
+        ids = {item.get('request_id') for item in live}
+        self.approvals = {key: target for key, target in self.approvals.items()
+                          if target[0] != prompt.session_key or target[1] in ids}
+        candidates = [item for item in live if item.get('request_id')
+                      and _redact_approval_command(item.get('command', '')) == prompt.command
+                      and (not item.get('description') or item['description'] == prompt.description)]
+        if len(candidates) != 1:
+            return SendResult(success=False, error='Cannot identify one pending request.')
+        request_id = candidates[0]['request_id']
+        key = 'hermes:' + request_id
+        self.approvals[key] = (prompt.session_key, request_id)
+        result = await self.client.call('approval', key=key, details=prompt.command + '\n' + prompt.description,
+                                        choices=['allow once', 'deny'])
+        return SendResult(success=True, message_id=result['message_id'])
+
+    async def handle_approval_reply(self, job):
+        from tools.approval import resolve_gateway_approval
+
+        reply = job.get('approval_reply')
+        if reply is None and job['text'].strip().lower().split(maxsplit=1)[0] not in ('/approve', '/deny'):
+            return False
+        result = 'Reply to a pending permission request with allow once or deny.'
+        if reply:
+            target = self.approvals.get(reply['key'])
+            choice = {'allow-once': 'once', 'deny': 'deny'}.get(reply['decision'])
+            if target and choice:
+                session, request_id = target
+                if resolve_gateway_approval(session, choice, request_id=request_id):
+                    result = 'Allowed once.' if choice == 'once' else 'Denied.'
+                self.approvals.pop(reply['key'], None)
+        await self.client.call('send', key='decision:' + job['id'], text=result)
+        return True
 
     async def on_processing_start(self, event):
         self.thinking.add(event.message_id)

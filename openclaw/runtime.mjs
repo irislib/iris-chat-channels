@@ -2,6 +2,9 @@ import { createHash, randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 import { dispatchInboundDirectDm } from 'openclaw/plugin-sdk/channel-inbound';
 import { sanitizeAssistantVisibleText } from 'openclaw/plugin-sdk/text-chunking';
+import { registerChannelRuntimeContext } from 'openclaw/plugin-sdk/channel-runtime-context';
+import { CHANNEL_APPROVAL_NATIVE_RUNTIME_CONTEXT_CAPABILITY } from 'openclaw/plugin-sdk/approval-handler-adapter-runtime';
+import { reviewReply } from './approvals.mjs';
 import { IrisClient } from './client.mjs';
 import { maybeOwner, normalizeOwner } from './identity.mjs';
 
@@ -12,7 +15,7 @@ const identity = { key: 'iris-public-key', normalizeEntry: maybeOwner, normalize
 export async function startAccount(ctx) {
   const client = new IrisClient(ctx.account);
   const jobs = new Map();
-  let typing;
+  let typing, approvalContext;
   const assertActive = () => { if (ctx.abortSignal.aborted) throw new Error('Iris channel stopped.'); };
   const warn = () => ctx.log?.warn?.('Iris transport is recovering. No task is replayed automatically.');
   try {
@@ -20,7 +23,10 @@ export async function startAccount(ctx) {
     if (health.owner !== ctx.account.owner || !health.ready) throw new Error('Iris pairing does not match this channel. Run openclaw iris setup.');
     const channelRuntime = ctx.channelRuntime;
     if (!channelRuntime?.inbound?.ingress?.resolveStable) throw new Error('Iris requires OpenClaw 2026.10.9 channel ingress.');
-    active = { client, owner: health.owner, assertActive };
+    const account = { client, owner: health.owner, assertActive, requests: new Map() };
+    active = account;
+    approvalContext = registerChannelRuntimeContext({ channelRuntime, channelId: 'iris', accountId: 'default',
+      capability: CHANNEL_APPROVAL_NATIVE_RUNTIME_CONTEXT_CAPABILITY, context: account, abortSignal: ctx.abortSignal });
     ctx.setStatus({ accountId: 'default', running: true, connected: true, lifecycle: 'ready', lastError: null });
     typing = setInterval(() => { if (jobs.size) client.call('typing', { active: true }).catch(() => {}); }, 5000);
 
@@ -41,6 +47,10 @@ export async function startAccount(ctx) {
       if (!access.senderAccess.allowed) throw new Error('Iris sender is not authorized.');
       assertActive();
       await client.call('seen', { id: job.id }).catch(() => {});
+      if (await reviewReply(job, ctx, account)) {
+        await client.call('finish', { id: job.id });
+        return;
+      }
       await client.call('typing', { active: true }).catch(() => {});
       let sequence = 0;
       await dispatchInboundDirectDm({
@@ -79,6 +89,7 @@ export async function startAccount(ctx) {
       await delay(2000, undefined, { signal: ctx.abortSignal }).catch(() => {});
     }
   } finally {
+    approvalContext?.dispose();
     clearInterval(typing);
     if (active?.client === client) active = undefined;
     await Promise.allSettled(jobs.values());

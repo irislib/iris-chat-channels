@@ -11,7 +11,7 @@ Copy the plugin JSON printed by setup into that project's `opencode.json`, then 
 
 Requires OpenCode 1.19.5, Node 22+, Python 3.9+, macOS/Linux (or WSL). Setup reuses Iris or offers to install the tested CLI release for you, with no administrator access or PATH changes. Automatic installation supports Apple Silicon/Intel Macs and x86_64 Linux; other systems need a compatible [Iris CLI](https://irischat.org/#command-line-interface). Setup asks for your public Iris ID and an invite from your app. No personal secret key is needed. Keep Iris online for first contact.
 
-Only the paired project and contact can start tasks. OpenCode retains its model and tool permissions. Reply `/approve ID` or `/deny ID` to a pending permission prompt; approval applies once. `/stop` cancels the current Iris task. Other OpenCode sessions are not forwarded.
+Only the paired project and contact can start tasks. OpenCode retains its model and tool permissions. Use Reply on the permission message and type `allow once` or `deny`. `/stop` cancels the current Iris task. Other OpenCode sessions are not forwarded.
 
 Text, seen receipts, and typing while busy are supported. Interrupted tasks are reported without automatically repeating tools. Preserve `~/.local/share/iris-channels/opencode` across updates. For another project, choose a separate `IRIS_OPENCODE_STATE_DIR` during both setup and OpenCode startup; one process may own each profile.
 

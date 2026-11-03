@@ -42,6 +42,30 @@ class TransportContract(unittest.IsolatedAsyncioTestCase):
         restarted.cli = self.transport.cli
         self.assertIsNone(await restarted.operation('receive', {'active':[]}))
 
+    async def test_approval_replies_bind_only_the_unique_confirmed_outbox_prompt(self):
+        async def cli(*args, **kwargs):
+            if args[0] == 'send':
+                uid = str(len(self.messages))
+                self.messages.append(self.incoming(id=uid, body=args[2], is_outgoing=True))
+                return {'message': {'id': uid}}
+            return {'chat': {'kind': 'direct', 'chat_id': OWNER}, 'messages': self.messages}
+
+        self.messages = []
+        self.transport.cli = cli
+        for key in ('first', 'second'):
+            await self.transport.operation('approval', {'key': 'opencode:' + key, 'details': 'Read file',
+                                                       'choices': ['allow once', 'deny']})
+        quote = lambda m: '↩ Device: ' + m['body'].replace('\n', ' ')[:96] + '\n\nallow once'
+        jobs = [self.incoming(id='r1', body=quote(self.messages[1])), self.incoming(id='r2', body='allow once'),
+                self.incoming(id='r3', body=quote(self.messages[0]))]
+        self.messages += [self.incoming(id='copy', is_outgoing=True, body=self.messages[0]['body'] + ' copied'), *jobs]
+        for key in ('opencode:second', None, None):
+            job = await self.transport.operation('receive', {'active': []})
+            self.assertEqual(job['approval_reply'], {'key': key, 'decision': 'allow-once'})
+            await self.transport.operation('finish', {'id': job['id']})
+        with self.assertRaises(ValueError):
+            await self.transport.operation('send', {'key': 'approval:forged', 'text': 'Permission request'})
+
     async def test_running_task_is_reported_interrupted_not_replayed(self):
         self.messages = [self.incoming()]
         await self.transport.operation('receive', {'active':[]})

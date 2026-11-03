@@ -40,17 +40,23 @@ export default async function irisPlugin({ client, directory }, options = {}) {
         await channel.send(`control:${job.id}`, 'Stopped the current Iris task.');
         return true;
       }
-      const match = /^\/(approve|deny)\s+(\S+)\s*$/.exec(job.text);
-      if (!match) return false;
-      const permission = permissions.get(match[2]);
-      if (!permission || permission.sessionID !== session?.id) {
-        await channel.send(`control:${job.id}`, 'That approval request is no longer pending.');
-        return true;
+      const reply = job.approval_reply;
+      if (!reply && !/^\/(?:approve|deny)(?:\s|$)/i.test(job.text.trim())) return false;
+      const permission = permissions.get(reply?.key);
+      let response = 'Reply to a pending permission request with allow once or deny.';
+      if (permission && permission.sessionID === session?.id && ['allow-once', 'deny'].includes(reply.decision)) {
+        const approved = reply.decision === 'allow-once';
+        const result = await client.postSessionIdPermissionsPermissionId({
+          path: { id: session.id, permissionID: permission.id }, body: { response: approved ? 'once' : 'reject' },
+        });
+        if (result.error || result.data !== true) {
+          response = 'That request could not be confirmed. Check the OpenCode session.';
+        } else {
+          permissions.delete(reply.key);
+          response = approved ? 'Allowed once.' : 'Denied.';
+        }
       }
-      unwrap(await client.postSessionIdPermissionsPermissionId({ path: { id: session.id, permissionID: permission.id },
-        body: { response: match[1] === 'approve' ? 'once' : 'reject' } }));
-      permissions.delete(permission.id);
-      await channel.send(`control:${job.id}`, match[1] === 'approve' ? 'Approved this one request.' : 'Denied this request.');
+      await channel.send(`control:${job.id}`, response);
       return true;
     },
   });
@@ -63,10 +69,14 @@ export default async function irisPlugin({ client, directory }, options = {}) {
       if (!session || disposed) return;
       if (event.type === 'permission.asked' && event.properties.sessionID === session.id) {
         const request = event.properties;
-        permissions.set(request.id, request);
-        await channel.send(`permission:${request.id}`, `Permission requested: ${request.permission}\n${(request.patterns ?? []).join('\n')}\nReply /approve ${request.id} or /deny ${request.id}. Approval applies once.`).catch(() => {});
+        const key = `opencode:${request.id}`;
+        permissions.set(key, request);
+        await channel.client.call('approval', { key, details: [request.permission, ...(request.patterns ?? [])].join('\n'),
+          choices: ['allow once', 'deny'] });
       }
-      if (event.type === 'permission.replied') permissions.delete(event.properties.requestID);
+      if (event.type === 'permission.replied' && event.properties.sessionID === session.id) {
+        permissions.delete(`opencode:${event.properties.requestID}`);
+      }
     },
     dispose: async () => {
       disposed = true;

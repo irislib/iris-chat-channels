@@ -13,6 +13,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import shutil
 import sqlite3
 import subprocess
@@ -186,6 +187,40 @@ def atomic_json(path, value):
     os.replace(temporary, path)
 
 
+APPROVAL_CHOICES = {'allow once': 'allow-once', 'always allow': 'allow-always', 'deny': 'deny'}
+
+
+def approval_reply(body, history, db):
+    # Released Iris clients quote a display name and a snippet, not a message ID.
+    # Display names are local to each device. Resolve only a unique sent prompt
+    # in this direct chat, then recover its host key from the confirmed outbox.
+    header, separator, answer = body.partition('\n\n')
+    quoted = separator and header.startswith('↩ ')
+    choice = APPROVAL_CHOICES.get((answer if quoted else body).strip().lower())
+    if not choice:
+        return None
+    key = None
+    if quoted:
+        author, split, snippet = header[2:].partition(': ')
+        if author and split and re.match(r'Permission request #[0-9a-f]{12}(?: |$)', snippet):
+            matches = []
+            for message in history:
+                source = message.get('body') or ''
+                # Iris quotes the visible body when someone replies to a reply.
+                if source.startswith('↩ ') and '\n\n' in source:
+                    source = source.partition('\n\n')[2]
+                if source.replace('\n', ' ').strip().startswith(snippet):
+                    matches.append(message)
+            if len(matches) == 1:
+                prompt = matches[0]
+                if prompt.get('is_outgoing') is True and not prompt.get('deleted_for_everyone'):
+                    row = db.execute("SELECT id FROM outbox WHERE message_id=? AND body=? AND id LIKE 'approval:%'",
+                                     (prompt['id'], prompt['body'])).fetchone()
+                    if row:
+                        key = row['id'][len('approval:'):]
+    return {'key': key, 'decision': choice}
+
+
 class Transport:
     def __init__(self, state_dir, binary='iris', profile_dir=None):
         self.state = Path(state_dir).expanduser().resolve()
@@ -209,6 +244,7 @@ class Transport:
         db.row_factory = sqlite3.Row
         db.execute('CREATE TABLE IF NOT EXISTS jobs (id TEXT PRIMARY KEY, body TEXT NOT NULL, status TEXT NOT NULL, created REAL NOT NULL, reply TEXT, sent_id TEXT)')
         db.execute('CREATE TABLE IF NOT EXISTS outbox (id TEXT PRIMARY KEY, body TEXT NOT NULL, created REAL NOT NULL, message_id TEXT, delivery TEXT)')
+        db.execute('CREATE TABLE IF NOT EXISTS approval_replies (job_id TEXT PRIMARY KEY, decision TEXT NOT NULL, prompt_key TEXT)')
         return db
 
     async def cli(self, *args, timeout=45):
@@ -319,8 +355,13 @@ class Transport:
                     if (message.get('chat_id') == owner and message.get('is_outgoing') is False
                         and not message.get('deleted_for_everyone') and isinstance(message.get('body'), str)
                         and message['body'].strip() and isinstance(message.get('id'), str)):
-                        db.execute('INSERT OR IGNORE INTO jobs(id,body,status,created) VALUES (?,?,?,?)',
+                        inserted = db.execute('INSERT OR IGNORE INTO jobs(id,body,status,created) VALUES (?,?,?,?)',
                             (message['id'], message['body'], 'new', message.get('created_at_secs', time.time())))
+                        if inserted.rowcount:
+                            reply = approval_reply(message['body'], history, db)
+                            if reply:
+                                db.execute('INSERT INTO approval_replies VALUES (?,?,?)',
+                                           (message['id'], reply['decision'], reply['key']))
             self.last_refresh = time.monotonic()
         with self.database() as db:
             rows = db.execute("SELECT * FROM jobs WHERE status != 'done' ORDER BY created,id").fetchall()
@@ -329,7 +370,9 @@ class Transport:
                 return None
             interrupted = row['status'] != 'new'
             db.execute("UPDATE jobs SET status='running' WHERE id=?", (row['id'],))
-        return {'id': row['id'], 'text': row['body'], 'owner': owner, 'created': row['created'],
+            reply = db.execute('SELECT prompt_key,decision FROM approval_replies WHERE job_id=?', (row['id'],)).fetchone()
+        return {**({'approval_reply': {'key': reply['prompt_key'], 'decision': reply['decision']}} if reply else {}),
+                'id': row['id'], 'text': row['body'], 'owner': owner, 'created': row['created'],
                 'interrupted': interrupted, 'pending_reply': row['reply']}
 
     async def send(self, key, text):
@@ -363,13 +406,22 @@ class Transport:
     async def operation(self, op, data):
         # Operations are serialized across local, stdio, and HTTP clients.
         async with self.operation_lock:
+            if op == 'approval' and set(data) == {'key', 'details', 'choices'}:
+                key, details, choices = data['key'], data['details'], data['choices']
+                if (not isinstance(key, str) or not re.fullmatch(r'[a-z]+:[A-Za-z0-9._:-]{1,200}', key)
+                        or not isinstance(details, str) or not details.strip() or not isinstance(choices, list)
+                        or not choices or any(c not in APPROVAL_CHOICES for c in choices)):
+                    raise ValueError('Invalid approval request.')
+                ref = hashlib.sha256(key.encode()).hexdigest()[:12]
+                options = ' or '.join(choices)
+                return await self.send('approval:' + key, f'Permission request #{ref}\n{details}\n\nReply to this message with {options}.')
             if op == 'health' and not data:
                 owner = self.policy()
                 status = await self.cli('service', 'status', timeout=5)
                 return {'owner': owner, 'ready': bool(status.get('running') and status.get('account_loaded')), 'protocol': 1}
             if op == 'receive' and set(data) == {'active'}:
                 return await self.receive(data['active'])
-            if op == 'send' and set(data) == {'key', 'text'}:
+            if op == 'send' and set(data) == {'key', 'text'} and not str(data['key']).startswith('approval:'):
                 return await self.send(data['key'], data['text'])
             if op == 'finish' and set(data) == {'id'}:
                 with self.database() as db:
