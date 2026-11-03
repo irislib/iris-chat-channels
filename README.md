@@ -16,7 +16,7 @@ openclaw iris setup
 ### Hermes
 
 ```sh
-hermes plugins install irislib/iris-chat-channels/hermes --ref 155313526f82dc148aaa208bf94600b59f16db63 --enable
+hermes plugins install irislib/iris-chat-channels/hermes --ref 86ac4f4ddd696e7e2df4b737ea0251c0be5272c1 --enable
 hermes gateway setup
 ```
 
