@@ -1,5 +1,5 @@
 import { createApproverRestrictedNativeApprovalCapability } from 'openclaw/plugin-sdk/approval-runtime';
-import { createChannelApprovalNativeRuntimeAdapter, resolveApprovalOverGateway } from 'openclaw/plugin-sdk/approval-handler-runtime';
+import { resolveApprovalOverGateway } from 'openclaw/plugin-sdk/approval-handler-runtime';
 import { maybeOwner } from './identity.mjs';
 
 const ownerOf = cfg => maybeOwner(cfg.channels?.iris?.owner);
@@ -38,7 +38,7 @@ export const irisApprovals = createApproverRestrictedNativeApprovalCapability({
   isPluginAuthorizedSender: () => false,
   resolveNativeDeliveryMode: () => 'channel', requireMatchingTurnSourceChannel: true,
   resolveOriginTarget: origin,
-  nativeRuntime: createChannelApprovalNativeRuntimeAdapter({
+  nativeRuntime: {
     eventKinds: ['exec'],
     availability: { isConfigured: enabled, shouldHandle: params => Boolean(origin(params)) },
     presentation: {
@@ -57,7 +57,7 @@ export const irisApprovals = createApproverRestrictedNativeApprovalCapability({
       },
     },
     observe: { onFinalized: ({ context, request }) => context?.requests.delete('openclaw:' + request.id) },
-  }),
+  },
 });
 
 export async function reviewReply(job, ctx, account) {
