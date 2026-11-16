@@ -21,6 +21,8 @@ Setup asks for your public Iris ID and an invite from your app. Keep Iris online
 
 Preserve the private state directory across updates. One gateway may use each profile. Interrupted turns are reported without rerunning tools. Iris stores its own keys and history locally; nanobot and its configured model receive plaintext prompts. This channel does not isolate agent tools from your computer. No groups, attachments, telemetry, or automatic plugin downloads.
 
+Only message text reaches the agent. To request a file inspection, paste the Hashtree link in the message body. A separate attachment is omitted. An agent with authorized local tools can follow the [file inspection procedure](https://github.com/irislib/iris-chat-rs/blob/main/docs/agents.md#read-a-hashtree-attachment).
+
 [Source and releases](https://github.com/irislib/iris-chat-channels) · [Iris Chat](https://irischat.org)
 
 During setup only, an approved CLI download comes from a tagged GitHub release and is checked against a bundled SHA-256. The CLI location is saved in the channel folder for future starts. Existing identities and installations are preserved; runtime never downloads software.

@@ -24,6 +24,8 @@ Only the paired contact is accepted by the bridge, component, and ZeroClaw peer 
 
 Messages are decrypted for ZeroClaw and its model provider. The channel does not restrict the agent's own tools. No telemetry or automatic updates. The component release is unsigned and includes its SHA-256. Keep your signature-verification policy; strict installations must sign it with a publisher key you explicitly trust.
 
+Only message text reaches the agent. To request a file inspection, paste the Hashtree link in the message body. A separate attachment is omitted. An agent with authorized local tools can follow the [file inspection procedure](https://github.com/irislib/iris-chat-rs/blob/main/docs/agents.md#read-a-hashtree-attachment).
+
 For source builds, see [the component](plugin/README.md). [Source and releases](https://github.com/irislib/iris-chat-channels) · [Iris Chat](https://irischat.org)
 
 During setup only, an approved CLI download comes from a tagged GitHub release and is checked against a bundled SHA-256. The CLI location is saved in the channel folder for future starts. Existing identities and installations are preserved; runtime never downloads software.

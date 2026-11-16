@@ -23,6 +23,8 @@ personal secret key. Keep the private Iris state directory across updates.
 
 ## Permissions and data
 
+To request a file inspection, paste its Hashtree link in the message body. A caption can arrive without the attached file. Hermes can follow the [file inspection procedure](https://github.com/irislib/iris-chat-rs/blob/main/docs/agents.md#read-a-hashtree-attachment) using its existing permissions and tools. This channel does not supply a downloader.
+
 - Invokes the `iris` CLI with argument lists, without a shell. With your
   confirmation, setup downloads Iris 2026.10.30 from its tagged GitHub release,
   verifies the bundled SHA-256, and saves it in the channel folder. Existing

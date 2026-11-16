@@ -42,6 +42,20 @@ class TransportContract(unittest.IsolatedAsyncioTestCase):
         restarted.cli = self.transport.cli
         self.assertIsNone(await restarted.operation('receive', {'active':[]}))
 
+    async def test_only_a_link_in_the_message_body_reaches_the_agent(self):
+        attachment = {'url': 'htree://fixture-structured', 'filename': 'fixture.txt'}
+        body = 'Inspect the file at htree://fixture-in-text'
+        self.messages = [
+            self.incoming(id='only-attachment', body='', attachments=[attachment]),
+            self.incoming(id='with-text', body=body, attachments=[attachment]),
+        ]
+        job = await self.transport.operation('receive', {'active': []})
+        self.assertEqual((job['id'], job['text']), ('with-text', body))
+        self.assertNotIn('attachments', job)
+        self.assertNotIn(attachment['url'], json.dumps(job))
+        await self.transport.operation('finish', {'id': job['id']})
+        self.assertIsNone(await self.transport.operation('receive', {'active': []}))
+
     async def test_approval_replies_bind_only_the_unique_confirmed_outbox_prompt(self):
         async def cli(*args, **kwargs):
             if args[0] == 'send':

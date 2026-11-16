@@ -41,6 +41,8 @@ Setup asks for your public Iris ID (`npub…`) and an invite link from your app.
 
 One approved direct contact per profile. Text, seen receipts, and typing are supported; groups and attachments are not. Typing stays on while working and clears afterward. Interrupted tasks are reported without automatically repeating their tools.
 
+To ask about a Hashtree file, paste its link into the message text and say what to inspect. The agent receives the text, including the link. A file attached separately is omitted, even when a caption arrives. Only an agent with authorized local tools can use the [file inspection procedure](https://github.com/irislib/iris-chat-rs/blob/main/docs/agents.md#read-a-hashtree-attachment). The channel does not fetch files.
+
 For OpenClaw, Hermes, and OpenCode, use Reply on the specific permission message and type `allow once` or `deny`. OpenClaw also offers `always allow` when it can save that command and its arguments for the displayed folder. Each prompt lists its available choices.
 
 Keep the private Iris state directory across updates, and let only one agent process use each profile. Keep profiles, invites, and logs out of public issues. Iris encrypts transport; the agent and its configured model provider receive plaintext prompts. Each host retains its normal tool permissions. For filesystem/network isolation, see [iris-agent-dockers](https://github.com/irislib/iris-agent-dockers).
